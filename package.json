@@ -1,0 +1,23 @@
+{
+  "name": "ai_health_profiler",
+  "version": "1.0.0",
+  "description": "AI-Powered Health Risk Profiler",
+  "license": "ISC",
+  "author": "jyolsna",
+  "type": "module",
+  "main": "src/index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.10",
+    "tesseract.js": "^6.0.1"
+  }
+}
