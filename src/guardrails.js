@@ -1,13 +1,30 @@
-// src/guardrails.js
 import Joi from 'joi';
+import { createLogger } from './utils/logger.js';
+
+const logger = createLogger('guardrails');
 
 export function validateInput(parsedData) {
-  // Check if too many fields are missing
+  logger.info('Starting input validation', {
+    hasAnswers: !!parsedData.answers,
+    confidence: parsedData.confidence,
+    missingFieldsCount: parsedData.missing_fields?.length || 0
+  });
+
   const totalRequiredFields = 4; // age, smoker, exercise, diet
   const missingCount = parsedData.missing_fields.length;
   const missingPercentage = (missingCount / totalRequiredFields) * 100;
   
+  logger.debug('Checking missing fields threshold', {
+    missingCount: missingCount,
+    totalRequired: totalRequiredFields,
+    missingPercentage: missingPercentage.toFixed(1)
+  });
+  
   if (missingPercentage > 50) {
+    logger.warn('Validation failed: Too many missing fields', {
+      missingPercentage: missingPercentage.toFixed(1),
+      missingFields: parsedData.missing_fields
+    });
     return {
       isValid: false,
       response: {
@@ -18,9 +35,12 @@ export function validateInput(parsedData) {
       }
     };
   }
-
-  // Check confidence threshold
+  logger.debug('Checking confidence threshold', { confidence: parsedData.confidence });
   if (parsedData.confidence < 0.3) {
+    logger.warn('Validation failed: Low confidence score', { 
+      confidence: parsedData.confidence,
+      threshold: 0.3 
+    });
     return {
       isValid: false,
       response: {
@@ -31,7 +51,10 @@ export function validateInput(parsedData) {
     };
   }
 
-  // Validate individual field values
+  logger.debug('Starting Joi schema validation', {
+    fieldsToValidate: Object.keys(parsedData.answers || {})
+  });
+  
   const schema = Joi.object({
     age: Joi.number().integer().min(1).max(120),
     smoker: Joi.boolean(),
@@ -47,6 +70,11 @@ export function validateInput(parsedData) {
 
   const { error } = schema.validate(parsedData.answers);
   if (error) {
+    logger.warn('Joi validation failed', {
+      field: error.details[0].path[0],
+      value: error.details[0].context?.value,
+      errorMessage: error.details[0].message
+    });
     return {
       isValid: false,
       response: {
@@ -57,13 +85,11 @@ export function validateInput(parsedData) {
     };
   }
 
-  return { isValid: true };
-}
+  logger.info('Input validation completed successfully', {
+    confidence: parsedData.confidence,
+    missingFields: parsedData.missing_fields?.length || 0,
+    validatedFields: Object.keys(parsedData.answers || {})
+  });
 
-export function sanitizeInput(data) {
-  // Remove any potential harmful content
-  if (typeof data === 'string') {
-    return data.replace(/[<>]/g, '').trim();
-  }
-  return data;
+  return { isValid: true };
 }

@@ -1,304 +1,472 @@
-// README.md
-# Health Risk Profiler
+# 🏥 AI Health Risk Profiler
 
-AI-powered backend service that analyzes lifestyle survey responses (text or scanned forms) and generates structured health risk profiles with actionable recommendations.
+A comprehensive **AI-powered health assessment service** that analyzes lifestyle data from text, JSON, or scanned images to generate personalized health risk profiles and evidence-based recommendations.
 
-## Features
+## ✨ Features
 
-- **OCR Support**: Process both typed text and scanned form images
-- **Risk Assessment**: Calculate health risk scores based on lifestyle factors
-- **Smart Recommendations**: Generate personalized, actionable health advice
-- **Robust Validation**: Handle missing data and noisy inputs with guardrails
-- **RESTful API**: Clean JSON responses following specified schemas
+### 🔍 **Multi-Input Processing**
+- **Text Analysis**: Process natural language health descriptions
+- **OCR Support**: Extract data from scanned health forms and documents
+- **JSON Input**: Accept structured health data
+- **Image Processing**: Analyze uploaded health documents (max 10MB)
 
-## Architecture
+### 🧠 **Intelligent Analysis**
+- **Risk Factor Extraction**: Identify health risk factors from lifestyle data
+- **Risk Scoring**: Calculate comprehensive risk scores (0-100 scale)  
+- **Confidence Metrics**: Assess data quality and processing confidence
+- **Smart Validation**: Robust input validation with detailed error handling
+
+### 📋 **Comprehensive Logging**
+- **Module-Specific Logging**: Track activity across different components
+- **Multiple Log Levels**: Support for debug, info, warn, and error levels
+- **Dual Output**: Console display and file logging with human-readable format
+- **Request Tracking**: Log all API requests with metadata
+
+### 🛡️ **Enhanced Error Handling**
+- **File Validation**: Prevent non-image uploads and oversized files
+- **JSON Parsing**: Graceful handling of malformed JSON requests
+- **Graceful Degradation**: Fallback mechanisms for service reliability
+- **Detailed Error Responses**: Clear, actionable error messages
+
+## 🏗️ Architecture
 
 ```
 src/
-├── index.js         # Express server entrypoint
-├── routes.js        # API routes
-├── ocr.js           # OCR extraction logic
-├── factors.js       # Risk factor extraction
-├── risk.js          # Risk calculation logic
-├── recommendations.js # Recommendation generation
-├── guardrails.js    # Validation & error handling
-└── utils/           # Helper functions
+├── index.js              # Express server with middleware
+├── routes.js             # API endpoints with error handling
+├── ocr.js               # OCR processing with Tesseract.js
+├── factors.js           # Health factor extraction logic
+├── risk.js              # Risk calculation and scoring
+├── recommendations.js   # Recommendation generation system
+├── guardrails.js        # Input validation with Joi
+└── utils/
+    └── logger.js        # Winston-based logging system
 ```
 
-## Installation
+## 🚀 Installation & Setup
 
-1. Clone the repository
+### 1. **Clone Repository**
 ```bash
 git clone <your-repo-url>
-cd health-risk-profiler
+cd AI_health_profiler
 ```
 
-2. Install dependencies
+### 2. **Install Dependencies**
 ```bash
 npm install
 ```
 
-3. Start the development server
-```bash
-npm run dev
+### 3. **Environment Configuration**
+Create a `.env` file:
+```env
+# Server Configuration
+PORT=3000
+
+# Logging Configuration  
+LOG_LEVEL=info
+
+# Node Environment
+NODE_ENV=development
 ```
 
-4. The server will be running on `http://localhost:3000`
+### 4. **Start Development Server**
+```bash
+# Development mode with auto-restart
+npm run dev
 
-## API Endpoints
+# Production mode
+npm start
+```
 
-### 1. Health Profile Analysis
+### 5. **Access Application**
+- **API Base URL**: `http://localhost:3000/api`
+- **Health Check**: `http://localhost:3000/health`
+
+## 📡 API Endpoints
+
+### 🔬 **Health Risk Analysis**
 **POST** `/api/analyze`
 
-Analyzes health survey data and returns complete risk profile.
+Comprehensive health risk analysis with multiple input options.
 
-#### Text Input Example:
+#### **Text Input Example:**
 ```bash
 curl -X POST http://localhost:3000/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
-    "text": "Age: 42\nSmoker: yes\nExercise: rarely\nDiet: high sugar"
+    "text": "Age: 42, Smoker: yes, Exercise: rarely, Diet: high sugar and processed foods, BMI: 28.5, Sleep: 5 hours, Alcohol: often"
   }'
 ```
 
-#### JSON Input Example:
+#### **Structured JSON Example:**
 ```bash
 curl -X POST http://localhost:3000/api/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "data": {
-      "age": 42,
-      "smoker": true,
-      "exercise": "rarely",
-      "diet": "high sugar"
+      "age": 35,
+      "smoker": false,
+      "exercise": "often",
+      "diet": "balanced with vegetables",
+      "bmi": 24.2,
+      "sleep": 7.5,
+      "alcohol": "rarely"
     }
   }'
 ```
 
-#### Image Input Example:
+#### **Image Upload Example:**
 ```bash
 curl -X POST http://localhost:3000/api/analyze \
-  -F "image=@survey_form.jpg"
+  -F "image=@health_survey.jpg" \
+  http://localhost:3000/api/analyze
 ```
 
-#### Expected Response:
+#### **Expected Response:**
 ```json
 {
   "answers": {
     "age": 42,
     "smoker": true,
     "exercise": "rarely",
-    "diet": "high sugar"
+    "diet": "high sugar and processed foods",
+    "bmi": 28.5,
+    "sleep": 5,
+    "alcohol": "often"
   },
   "missing_fields": [],
-  "confidence": 0.92,
-  "factors": ["smoking", "poor diet", "low exercise"],
+  "confidence": 0.88,
+  "factors": ["smoking", "poor diet", "low exercise", "overweight", "poor sleep", "alcohol consumption"],
   "risk_level": "high",
-  "score": 78,
+  "score": 85,
   "rationale": ["smoking", "poor diet", "low exercise"],
   "recommendations": [
     "Quit smoking with professional support",
-    "Reduce sugar and increase vegetables",
-    "Walk 30 minutes daily",
-    "Consult healthcare provider for comprehensive assessment"
+    "Reduce processed foods and increase fruits, vegetables, and whole grains", 
+    "Start with 30 minutes of moderate exercise 3 times per week",
+    "Consult healthcare provider for comprehensive health assessment immediately",
+    "Practice stress management techniques"
   ],
   "status": "ok"
 }
 ```
 
-### 2. OCR Only
+### 🔍 **OCR Processing Only**
 **POST** `/api/ocr`
 
-Extract and parse text from images only.
+Extract and analyze text from images without full risk analysis.
 
 ```bash
 curl -X POST http://localhost:3000/api/ocr \
-  -F "image=@survey_form.jpg"
+  -F "image=@health_form.png" \
+  http://localhost:3000/api/ocr
 ```
 
-### 3. Health Check
+### ❤️ **Health Check**
 **GET** `/health`
 
-Check service status.
+Service status and configuration information.
 
 ```bash
 curl http://localhost:3000/health
 ```
 
-## Error Handling
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-09-27T20:30:00.000Z"
+}
+```
 
-### Incomplete Profile (>50% fields missing):
+## ⚡ Error Handling & Validation
+
+### **File Upload Errors**
+
+#### **Invalid File Type:**
+```json
+{
+  "status": "error",
+  "type": "file_validation_error",
+  "message": "Invalid file type: application/pdf. Only image files are allowed."
+}
+```
+
+#### **File Size Exceeded:**
+```json
+{
+  "status": "error", 
+  "type": "upload_error",
+  "message": "File size too large. Maximum allowed size is 10MB.",
+  "code": "LIMIT_FILE_SIZE"
+}
+```
+
+### **JSON Parsing Errors**
+
+#### **Malformed JSON:**
+```json
+{
+  "status": "error",
+  "type": "invalid_json",
+  "message": "Invalid JSON format in request body. Please check your JSON syntax."
+}
+```
+
+### **Data Validation Errors**
+
+#### **Incomplete Profile:**
 ```json
 {
   "status": "incomplete_profile",
   "reason": ">50% fields missing",
   "missing_fields": ["age", "smoker", "diet"],
-  "confidence": 0.45
+  "confidence": 0.35
 }
 ```
 
-### Low Confidence OCR:
+#### **Low OCR Confidence:**
 ```json
 {
-  "status": "low_confidence",
+  "status": "low_confidence", 
   "reason": "OCR confidence too low",
   "confidence": 0.25
 }
 ```
 
-### Invalid Data:
+#### **Invalid Field Values:**
 ```json
 {
   "status": "invalid_data",
-  "reason": "age must be between 1 and 120",
+  "reason": "age must be less than or equal to 120",
   "field": "age"
 }
 ```
 
-## Data Processing Pipeline
+## 🔄 Data Processing Pipeline
 
-1. **OCR/Text Parsing** → Extract survey fields from text/image
-2. **Validation** → Check completeness and data quality  
-3. **Factor Extraction** → Identify health risk factors
-4. **Risk Calculation** → Score and categorize risk level
-5. **Recommendations** → Generate actionable advice
+```mermaid
+graph LR
+    A[Input Data] --> B{Input Type}
+    B -->|Text| C[Text Processing]
+    B -->|JSON| D[JSON Parsing] 
+    B -->|Image| E[OCR Processing]
+    C --> F[Data Validation]
+    D --> F
+    E --> F
+    F --> G[Factor Extraction]
+    G --> H[Risk Calculation] 
+    H --> I[Recommendations]
+    I --> J[Response]
+```
 
-## Supported Survey Fields
+### **Processing Steps:**
+1. **Input Processing** → Handle text, JSON, or image inputs
+2. **Data Extraction** → Parse health information from various formats
+3. **Validation** → Check completeness, confidence, and data quality
+4. **Factor Analysis** → Identify specific health risk factors
+5. **Risk Scoring** → Calculate numerical risk score and categorization
+6. **Recommendations** → Generate personalized health advice
 
-- **age**: Integer (1-120)
-- **smoker**: Boolean
-- **exercise**: String (never/rarely/sometimes/often/daily)
-- **diet**: String (descriptive text)
-- **bmi**: Float (optional, 10-50)
-- **sleep**: Float (optional, 0-24 hours)
-- **alcohol**: String/Boolean (optional)
+## 📊 Supported Health Data Fields
 
-## Risk Scoring
+| Field | Type | Range | Required | Description |
+|-------|------|-------|----------|-------------|
+| `age` | Integer | 1-120 | ✅ | Person's age in years |
+| `smoker` | Boolean | true/false | ✅ | Smoking status |
+| `exercise` | String | never/rarely/sometimes/often/daily | ✅ | Exercise frequency |
+| `diet` | String | Descriptive text | ✅ | Dietary habits description |
+| `bmi` | Float | 10.0-50.0 | ❌ | Body Mass Index |
+| `sleep` | Float | 0-24 | ❌ | Hours of sleep per night |
+| `alcohol` | String/Boolean | never/rarely/sometimes/often | ❌ | Alcohol consumption |
 
-- **Low Risk**: 0-30 points
-- **Medium Risk**: 31-60 points  
-- **High Risk**: 61-100 points
+## 🎯 Risk Assessment System
 
-### Risk Factors & Weights:
-- Smoking: 25 points
-- Obesity: 20 points
-- Poor diet: 15 points
-- Low exercise: 15 points
-- Advanced age (65+): 15 points
-- High fat intake: 12 points
-- Overweight: 10 points
-- Poor sleep: 10 points
-- Alcohol consumption: 8 points
+### **Risk Levels:**
+- 🟢 **Low Risk**: 0-30 points
+- 🟡 **Medium Risk**: 31-60 points  
+- 🔴 **High Risk**: 61-100 points
 
-## Testing with Postman
+### **Risk Factor Weights:**
+| Factor | Points | Criteria |
+|--------|--------|----------|
+| Smoking | 25 | Current smoker |
+| Obesity | 20 | BMI ≥ 30 |
+| Poor Diet | 15 | High sugar/processed foods |
+| Low Exercise | 15 | Never/rarely exercises |
+| Advanced Age | 15 | Age ≥ 65 |
+| High Fat Intake | 12 | High fat/fried foods |
+| Underweight | 12 | BMI < 18.5 |
+| Overweight | 10 | BMI 25-29.9 |
+| Poor Sleep | 10 | < 6 or > 9 hours |
+| Alcohol | 8 | Often/sometimes drinks |
 
-1. Import the following requests into Postman:
+### **Age Adjustment:**
+Additional 2 points per 5-year increment above age 50.
 
-### Text Analysis Request:
-- **Method**: POST
-- **URL**: `http://localhost:3000/api/analyze`
+## 🧪 Testing with Postman
+
+### **Setup Collection:**
+
+#### **1. Text Analysis Request**
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/analyze`
 - **Headers**: `Content-Type: application/json`
-- **Body**:
+- **Body** (raw JSON):
 ```json
 {
-  "text": "Age: 35\nSmoker: no\nExercise: sometimes\nDiet: balanced"
+  "text": "Age: 28, Smoker: no, Exercise: daily, Diet: mediterranean, BMI: 22.1, Sleep: 8 hours, Alcohol: no"
 }
 ```
 
-### Image Analysis Request:
-- **Method**: POST
-- **URL**: `http://localhost:3000/api/analyze`
-- **Body**: form-data
+#### **2. Image Upload Request**
+- **Method**: `POST` 
+- **URL**: `{{base_url}}/api/analyze`
+- **Body**: `form-data`
   - Key: `image`
-  - Type: File
-  - Value: Select an image file
+  - Type: `File`
+  - Value: Select image file
 
-## Development
+#### **3. Error Testing Request**
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/analyze` 
+- **Headers**: `Content-Type: application/json`
+- **Body** (malformed JSON):
+```json
+{"text": "Age: 35" // Missing closing brace
+```
 
-### Run Tests:
+### **Environment Variables:**
+Set `base_url` to `http://localhost:3000`
+
+## 📝 Logging & Monitoring
+
+### **Log Levels:**
+- `debug`: Detailed diagnostic information
+- `info`: General operational messages  
+- `warn`: Warning conditions
+- `error`: Error conditions requiring attention
+
+### **Log Locations:**
+- **Console**: Colorized, real-time output during development
+- **File**: `logs/app.log` with structured, persistent logging
+
+### **Sample Log Output:**
+```
+2025-09-27 20:30:00 [info][server]: 🚀 Health Risk Profiler server running on port 3000
+2025-09-27 20:30:05 [info][routes]: Starting health risk analysis {"hasFile":true,"hasTextData":false}
+2025-09-27 20:30:05 [info][ocr]: Starting health profile processing {"inputType":"image","inputSize":245760}
+2025-09-27 20:30:06 [info][factors]: Starting factor extraction {"inputFields":["age","smoker","exercise"],"dataPointsCount":3}
+2025-09-27 20:30:06 [info][risk]: Starting risk calculation {"factorsCount":2,"factors":["smoking","poor diet"],"hasAgeData":true,"age":42}
+2025-09-27 20:30:06 [info][recommendations]: Starting recommendation generation {"riskLevel":"high","factorsCount":2,"factors":["smoking","poor diet"]}
+```
+
+## 🔧 Development
+
+### **Available Scripts:**
 ```bash
+# Development with auto-reload
+npm run dev
+
+# Production server
+npm start
+
+# Run tests (when available)
 npm test
 ```
 
-### Start Development Server:
-```bash
-npm run dev
+### **Development Tools:**
+- **Nodemon**: Auto-restart on file changes during development
+- **Winston**: Comprehensive logging system
+- **Joi**: Schema validation for robust input handling
+- **Multer**: File upload handling with validation
+- **Tesseract.js**: OCR processing capabilities
+
+## 🚀 Deployment
+
+### **Environment Variables for Production:**
+```env
+PORT=3000
+LOG_LEVEL=warn
+NODE_ENV=production
 ```
 
-### Production Build:
-```bash
-npm start
-```
+### **Platform Support:**
+- ✅ **Heroku**: Ready for deployment
+- ✅ **Railway**: Compatible
+- ✅ **Render**: Supported
+- ✅ **AWS/GCP/Azure**: Docker-ready
 
-## Deployment
-
-### Using ngrok (for local testing):
+### **Local Testing with ngrok:**
 ```bash
-# Install ngrok globally
+# Install ngrok
 npm install -g ngrok
 
-# Start your server
+# Start server
 npm start
 
-# In another terminal, expose it
+# Expose publicly
 ngrok http 3000
 ```
 
-### Cloud Deployment:
-The app is ready for deployment on platforms like:
-- Heroku
-- Railway
-- Render
-- AWS/GCP/Azure
+## 📖 Sample Test Cases
 
-Make sure to set environment variables as needed.
-
-## Sample Test Cases
-
-### Valid Complete Profile:
+### **Low Risk Profile:**
 ```json
 {
   "data": {
-    "age": 28,
+    "age": 25,
     "smoker": false,
-    "exercise": "often",
-    "diet": "healthy balanced",
-    "bmi": 22.5,
-    "sleep": 7.5
+    "exercise": "daily",
+    "diet": "balanced with lots of vegetables",
+    "bmi": 21.5,
+    "sleep": 8,
+    "alcohol": "never"
   }
 }
 ```
 
-### High Risk Profile:
+### **High Risk Profile:**
 ```json
 {
   "data": {
-    "age": 65,
+    "age": 68,
     "smoker": true,
-    "exercise": "never",
-    "diet": "high sugar processed foods",
-    "bmi": 32
+    "exercise": "never", 
+    "diet": "high sugar processed foods and fried meals",
+    "bmi": 34.2,
+    "sleep": 4,
+    "alcohol": "often"
   }
 }
 ```
 
-### Incomplete Profile (should trigger guardrail):
+### **Edge Cases:**
 ```json
 {
   "data": {
-    "age": 30
+    "age": 150,  // Should trigger validation error
+    "smoker": "maybe"  // Should trigger validation error
   }
 }
 ```
 
-## Notes
+## ⚠️ Important Notes
 
-- All recommendations are **non-diagnostic** and for informational purposes only
-- The service includes confidence scoring for all OCR operations
-- Input validation prevents malformed or malicious data
-- Rate limiting and file size limits are implemented for security
-- All responses follow the specified JSON schemas
+- 🏥 **Medical Disclaimer**: All recommendations are for informational purposes only and not a substitute for professional medical advice
+- 🔒 **Privacy**: No user data is stored permanently; all processing is stateless
+- 📊 **Accuracy**: OCR confidence scores help assess data reliability  
+- 🛡️ **Security**: Input validation prevents malicious data injection
+- ⚡ **Performance**: File size limits and request validation ensure service stability
 
-## Contact
+## 📞 Support
 
-For questions about implementation or deployment, please refer to the project documentation.
+For technical issues, feature requests, or deployment questions:
+- Check the logs in `logs/app.log` for detailed error information
+- Ensure all environment variables are correctly configured
+- Verify file upload limits and supported formats
+- Review API endpoint documentation for proper request formatting
+
+---
+
+**Built with ❤️ for better health insights through AI-powered analysis.**
