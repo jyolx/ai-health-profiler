@@ -95,7 +95,7 @@ curl -X POST http://localhost:3000/api/analyze \
 
 ### Image Upload (OCR)
 
-![Sample Health Form](./trial.png)
+![Sample Health Form](./images/trial.png)
 
 ```bash
 curl -X POST http://localhost:3000/api/analyze \
