@@ -17,6 +17,10 @@ src/
     └── logger.js        # Winston-based logging system
 ```
 
+**Processing Flow Diagram:**
+
+The system follows a modular pipeline architecture where each input type (text, JSON, or image) is processed through a common validation and analysis flow:
+
 ```mermaid
 graph LR
     A[Input Data] --> B{Input Type}
@@ -37,7 +41,7 @@ graph LR
 ### 1. Clone & Install
 ```bash
 git clone https://github.com/jyolx/ai-health-profiler.git
-cd AI_health_profiler
+cd ai-health-profiler
 npm install
 ```
 

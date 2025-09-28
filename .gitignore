@@ -96,3 +96,7 @@ eng.traineddata
 *.jpg
 *.jpeg
 testscrpit.js
+
+# Include images folder contents
+!images/
+!images/*
