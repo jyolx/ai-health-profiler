@@ -1,8 +1,91 @@
 import { createLogger } from './utils/logger.js';
+import {GoogleGenAI} from '@google/genai';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const logger = createLogger('recommendations');
+const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY});
 
-function generateRecommendations(riskLevel, factors) {
+async function generateRecommendations(riskLevel, factors) {
+  logger.info('Starting AI recommendation generation', {
+    riskLevel: riskLevel,
+    factorsCount: factors.length,
+    factors: factors
+  });
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      logger.warn('GEMINI_API_KEY not found, falling back to static recommendations');
+      return generateStaticRecommendations(riskLevel, factors);
+    }
+    
+    const prompt = `You are a healthcare AI assistant. Based on the following health information, provide less than 5 specific, actionable health recommendations.
+
+Risk Level: ${riskLevel}
+Health Factors: ${factors.join(', ')}
+
+Please provide recommendations that are:
+1. Short, Specific and actionable
+2. Appropriate for the given risk level
+3. Tailored to the given health factors
+4. Professional and medically sound
+5. Formatted as a simple numbered list
+
+Return only less than 5 recommendations, and nothing else.`;
+
+    logger.debug('Sending prompt to Gemini AI', {
+      promptLength: prompt.length,
+      riskLevel: riskLevel,
+      factorsCount: factors.length
+    });
+
+    const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-lite',
+    contents: prompt,
+  });
+    const aiRecommendations = response.text;
+    
+    logger.debug('Received AI response', {
+      responseLength: aiRecommendations.length
+    });
+
+    // Parse the AI response into an array
+    const recommendationsArray = aiRecommendations
+      .split('\n')
+      .map(line => line.replace(/^\d+\.\s*/, '').trim())
+      .filter(line => line.length > 0)
+      .slice(0, 5);
+
+    logger.info('AI recommendation generation completed', {
+      riskLevel: riskLevel,
+      totalFactors: factors.length,
+      totalRecommendations: recommendationsArray.length,
+      recommendations: recommendationsArray
+    });
+
+    return {
+      risk_level: riskLevel,
+      factors,
+      recommendations: recommendationsArray,
+      source: 'gemini-ai'
+    };
+
+  } catch (error) {
+    logger.error('Error generating AI recommendations, falling back to static', {
+      error: error.message,
+      stack: error.stack,
+      riskLevel: riskLevel,
+      factors: factors
+    });
+
+    // Fallback to static recommendations if AI fails
+    return generateStaticRecommendations(riskLevel, factors);
+  }
+}
+
+// Fallback function for static recommendations
+function generateStaticRecommendations(riskLevel, factors) {
   logger.info('Starting recommendation generation', {
     riskLevel: riskLevel,
     factorsCount: factors.length,
@@ -92,7 +175,8 @@ function generateRecommendations(riskLevel, factors) {
   const result = {
     risk_level: riskLevel,
     factors,
-    recommendations: finalRecommendations
+    recommendations: finalRecommendations,
+    source: 'static'
   };
 
   logger.info('Recommendation generation completed', {

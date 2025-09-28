@@ -13,6 +13,7 @@ A comprehensive **AI-powered health assessment service** that analyzes lifestyle
 ### 🧠 **Intelligent Analysis**
 - **Risk Factor Extraction**: Identify health risk factors from lifestyle data
 - **Risk Scoring**: Calculate comprehensive risk scores (0-100 scale)  
+- **AI-Powered Recommendations**: Generate personalized recommendations using Google Gemini AI with static fallback
 - **Confidence Metrics**: Assess data quality and processing confidence
 - **Smart Validation**: Robust input validation with detailed error handling
 
@@ -37,7 +38,7 @@ src/
 ├── ocr.js               # OCR processing with Tesseract.js
 ├── factors.js           # Health factor extraction logic
 ├── risk.js              # Risk calculation and scoring
-├── recommendations.js   # Recommendation generation system
+├── recommendations.js   # AI-powered recommendations with Gemini API
 ├── guardrails.js        # Input validation with Joi
 └── utils/
     └── logger.js        # Winston-based logging system
@@ -47,7 +48,7 @@ src/
 
 ### 1. **Clone Repository**
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/jyolx/ai-health-profiler.git
 cd AI_health_profiler
 ```
 
@@ -67,6 +68,9 @@ LOG_LEVEL=info
 
 # Node Environment
 NODE_ENV=development
+
+# AI Configuration (Optional - falls back to static recommendations if not provided)
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 4. **Start Development Server**
@@ -80,7 +84,7 @@ npm start
 
 ### 5. **Access Application**
 - **API Base URL**: `http://localhost:3000/api`
-- **Health Check**: `http://localhost:3000/health`
+- **Health Check**: `http://localhost:3000/ping`
 
 ## 📡 API Endpoints
 
@@ -147,6 +151,7 @@ curl -X POST http://localhost:3000/api/analyze \
     "Consult healthcare provider for comprehensive health assessment immediately",
     "Practice stress management techniques"
   ],
+  "source": "gemini-ai",
   "status": "ok"
 }
 ```
@@ -163,12 +168,12 @@ curl -X POST http://localhost:3000/api/ocr \
 ```
 
 ### ❤️ **Health Check**
-**GET** `/health`
+**GET** `/ping`
 
 Service status and configuration information.
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/ping
 ```
 
 **Response:**
@@ -266,7 +271,7 @@ graph LR
 3. **Validation** → Check completeness, confidence, and data quality
 4. **Factor Analysis** → Identify specific health risk factors
 5. **Risk Scoring** → Calculate numerical risk score and categorization
-6. **Recommendations** → Generate personalized health advice
+6. **AI Recommendations** → Generate personalized health advice using Gemini AI (with static fallback)
 
 ## 📊 Supported Health Data Fields
 
@@ -304,40 +309,34 @@ graph LR
 ### **Age Adjustment:**
 Additional 2 points per 5-year increment above age 50.
 
-## 🧪 Testing with Postman
+## 🤖 AI-Powered Recommendations System
 
-### **Setup Collection:**
+### **Google Gemini Integration:**
+The application uses **Google Gemini AI** to generate personalized health recommendations based on risk factors and health profile data.
 
-#### **1. Text Analysis Request**
-- **Method**: `POST`
-- **URL**: `{{base_url}}/api/analyze`
-- **Headers**: `Content-Type: application/json`
-- **Body** (raw JSON):
+#### **How it Works:**
+1. **AI Analysis**: Sends risk level and identified health factors to Gemini AI
+2. **Personalized Recommendations**: Receives <5 tailored, actionable health recommendations
+3. **Fallback System**: Automatically uses static recommendations if AI is unavailable
+4. **Quality Assurance**: All recommendations are medically sound and specific to user's profile
+
+#### **AI vs Static Recommendations:**
+- **With Gemini AI** (`source: "gemini-ai"`): Dynamic, contextual, and highly personalized
+- **Static Fallback** (`source: "static"`): Reliable, pre-defined recommendations based on factors
+
+#### **Response Format:**
 ```json
 {
-  "text": "Age: 28, Smoker: no, Exercise: daily, Diet: mediterranean, BMI: 22.1, Sleep: 8 hours, Alcohol: no"
+  "recommendations": [
+    "Quit smoking immediately and consider nicotine replacement therapy",
+    "Implement a structured exercise program starting with 20 minutes daily",
+    "Schedule comprehensive health screening with your physician within 2 weeks",
+    "Adopt Mediterranean diet focusing on lean proteins and whole grains",
+    "Practice stress reduction through mindfulness meditation or yoga"
+  ],
+  "source": "gemini-ai"
 }
 ```
-
-#### **2. Image Upload Request**
-- **Method**: `POST` 
-- **URL**: `{{base_url}}/api/analyze`
-- **Body**: `form-data`
-  - Key: `image`
-  - Type: `File`
-  - Value: Select image file
-
-#### **3. Error Testing Request**
-- **Method**: `POST`
-- **URL**: `{{base_url}}/api/analyze` 
-- **Headers**: `Content-Type: application/json`
-- **Body** (malformed JSON):
-```json
-{"text": "Age: 35" // Missing closing brace
-```
-
-### **Environment Variables:**
-Set `base_url` to `http://localhost:3000`
 
 ## 📝 Logging & Monitoring
 
@@ -370,9 +369,6 @@ npm run dev
 
 # Production server
 npm start
-
-# Run tests (when available)
-npm test
 ```
 
 ### **Development Tools:**
@@ -381,33 +377,18 @@ npm test
 - **Joi**: Schema validation for robust input handling
 - **Multer**: File upload handling with validation
 - **Tesseract.js**: OCR processing capabilities
+- **Google Gemini AI**: AI-powered personalized health recommendations
+- **Microsoft Azure**: Cloud deployment platform and hosting service
 
 ## 🚀 Deployment
 
-### **Environment Variables for Production:**
-```env
-PORT=3000
-LOG_LEVEL=warn
-NODE_ENV=production
-```
+**Live Application**: This AI Health Profiler is deployed on Azure and can be accessed at:
+**[https://your-app-name.azurewebsites.net](https://your-app-name.azurewebsites.net)**
 
-### **Platform Support:**
-- ✅ **Heroku**: Ready for deployment
-- ✅ **Railway**: Compatible
-- ✅ **Render**: Supported
-- ✅ **AWS/GCP/Azure**: Docker-ready
+- **Platform**: Microsoft Azure App Service
+- **API Base URL**: `https://your-app-name.azurewebsites.net/api`
 
-### **Local Testing with ngrok:**
-```bash
-# Install ngrok
-npm install -g ngrok
 
-# Start server
-npm start
-
-# Expose publicly
-ngrok http 3000
-```
 
 ## 📖 Sample Test Cases
 
@@ -458,15 +439,3 @@ ngrok http 3000
 - 📊 **Accuracy**: OCR confidence scores help assess data reliability  
 - 🛡️ **Security**: Input validation prevents malicious data injection
 - ⚡ **Performance**: File size limits and request validation ensure service stability
-
-## 📞 Support
-
-For technical issues, feature requests, or deployment questions:
-- Check the logs in `logs/app.log` for detailed error information
-- Ensure all environment variables are correctly configured
-- Verify file upload limits and supported formats
-- Review API endpoint documentation for proper request formatting
-
----
-
-**Built with ❤️ for better health insights through AI-powered analysis.**
