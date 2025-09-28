@@ -6,6 +6,7 @@ const logger = createLogger('ocr');
 export async function processHealthProfile(input, type) {
   
   let text = '';
+  let ocrConfidence = null;
   
   if (type === 'image') {
     logger.info('Beginning OCR text extraction from image');
@@ -18,9 +19,10 @@ export async function processHealthProfile(input, type) {
       }
     });
     text = result.data.text;
+    ocrConfidence = result.data.confidence / 100; // Convert to 0-1 scale
     logger.info('OCR text extraction completed', { 
       textLength: text.length,
-      confidence: result.data.confidence 
+      ocrConfidence: ocrConfidence 
     });
   } else {
     text = input;
@@ -30,20 +32,30 @@ export async function processHealthProfile(input, type) {
   // Parsing
   const answers = parseHealthSurvey(text);
   const missingFields = findMissingFields(answers);
-  const confidence = calculateConfidence(answers,missingFields, text, type);
 
-  logger.debug('Health profile processing completed', {
-    extractedFields: Object.keys(answers).length,
-    missingFields: missingFields.length,
-    confidence: confidence,
-    fieldsFound: Object.keys(answers)
-  });
-
-  return {
+  const result = {
     answers,
-    missing_fields: missingFields,
-    confidence: parseFloat(confidence.toFixed(2))
+    missing_fields: missingFields
   };
+
+  // Only add confidence for OCR/image processing
+  if (type === 'image' && ocrConfidence !== null) {
+    result.confidence = parseFloat(ocrConfidence.toFixed(2));
+    logger.debug('Health profile processing completed with OCR confidence', {
+      extractedFields: Object.keys(answers).length,
+      missingFields: missingFields.length,
+      ocrConfidence: result.confidence,
+      fieldsFound: Object.keys(answers)
+    });
+  } else {
+    logger.debug('Health profile processing completed (text input - no confidence)', {
+      extractedFields: Object.keys(answers).length,
+      missingFields: missingFields.length,
+      fieldsFound: Object.keys(answers)
+    });
+  }
+
+  return result;
 }
 
 function parseHealthSurvey(text) {
@@ -140,31 +152,4 @@ function findMissingFields(answers) {
   }
   
   return missing;
-}
-
-function calculateConfidence(answers, missingFields, originalText, type) {
-  let confidence = 0.5; // Base confidence
-  
-  // Boost confidence based on number of extracted fields
-  const extractedFields = Object.keys(answers).length;
-  confidence += extractedFields * 0.5;
-  
-  // Penalize for missing required fields
-  confidence -= missingFields.length * 0.15;
-  
-  if (type === 'text') {
-    confidence += 0.2; // Text input is more reliable
-  }
-  
-  const finalConfidence = Math.max(0, Math.min(1, confidence));
-  
-  logger.debug('Confidence calculation completed', {
-    baseConfidence: 0.5,
-    extractedFields: extractedFields,
-    missingFields: missingFields.length,
-    inputType: type,
-    finalConfidence: finalConfidence.toFixed(2)
-  });
-  
-  return finalConfidence;
 }
